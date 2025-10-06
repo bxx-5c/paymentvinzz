@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway - DANA, QRIS, GoPay, OVO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reset dan variabel CSS */
+        :root {
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --secondary: #0f172a;
+            --accent: #06b6d4;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --dana: #108ee9;
+            --gopay: #00aa13;
+            --ovo: #4c2b87;
+            --qris: #f59e0b;
+            --card-bg: rgba(15, 23, 42, 0.8);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Efek background animasi */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
+            animation: float 20s infinite ease-in-out;
+            opacity: 0.1;
+        }
+        
+        .circle-1 {
+            width: 400px;
+            height: 400px;
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+        
+        .circle-2 {
+            width: 300px;
+            height: 300px;
+            top: 60%;
+            left: 80%;
+            animation-delay: 7s;
+        }
+        
+        .circle-3 {
+            width: 250px;
+            height: 250px;
+            top: 30%;
+            left: 70%;
+            animation-delay: 14s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0) scale(1);
+            }
+            33% {
+                transform: translateY(-30px) translateX(20px) scale(1.05);
+            }
+            66% {
+                transform: translateY(20px) translateX(-15px) scale(0.95);
+            }
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #60a5fa, #3b82f6, #1d4ed8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+        
+        /* Container utama */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        /* Kartu pembayaran */
+        .payment-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: var(--shadow);
+            transition: all 0.4s ease;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .payment-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+        }
+        
+        .payment-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        
+        .payment-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .payment-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .payment-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            background: white;
+            padding: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-logo:hover {
+            transform: scale(1.05);
+        }
+        
+        .payment-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .payment-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #e2e8f0, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .payment-status {
+            background: rgba(6, 182, 212, 0.2);
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        
+        /* Info pembayaran */
+        .payment-info {
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 15px;
+            padding: 1.8rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+        
+        .payment-info:hover {
+            background: rgba(30, 41, 59, 0.8);
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        
+        .payment-info h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #cbd5e1;
+        }
+        
+        .payment-number {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin: 1.2rem 0;
+            letter-spacing: 1px;
+            background: rgba(15, 23, 42, 0.7);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            display: inline-block;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            color: #60a5fa;
+        }
+        
+        .payment-number:hover {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        
+        /* QR Code */
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 1.5rem 0;
+        }
+        
+        .qr-code {
+            width: 240px;
+            height: 240px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            position: relative;
+        }
+        
+        .qr-code:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            border-color: rgba(59, 130, 246, 0.6);
+        }
+        
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .qr-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            text-align: center;
+            margin-top: 0.5rem;
+            color: #cbd5e1;
+        }
+        
+        /* Tombol salin */
+        .copy-btn {
+            background: linear-gradient(to right, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(to right, var(--primary-light), var(--primary));
+        }
+        
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Instruksi pembayaran */
+        .instructions {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .instructions h4 {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #cbd5e1;
+        }
+        
+        .instructions ol {
+            padding-left: 1.2rem;
+        }
+        
+        .instructions li {
+            margin-bottom: 0.7rem;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 1.5rem;
+            font-size: 0.95rem;
+            opacity: 0.8;
+            width: 100%;
+            max-width: 800px;
+            border-top: 1px solid rgba(59, 130, 246, 0.2);
+            color: #94a3b8;
+        }
+        
+        /* Kontrol Musik */
+        .music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 50px;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        
+        .music-control {
+            background: transparent;
+            border: none;
+            color: #60a5fa;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .music-control:hover {
+            background: rgba(59, 130, 246, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .music-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .music-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        
+        .music-status {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .volume-slider {
+            width: 80px;
+            -webkit-appearance: none;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(59, 130, 246, 0.3);
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        
+        /* Responsif */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .payment-card {
+                padding: 1.5rem;
+            }
+            
+            .payment-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .payment-number {
+                font-size: 1.3rem;
+            }
+            
+            .qr-code {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .music-player {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                justify-content: center;
+            }
+        }
+        
+        /* Animasi untuk notifikasi */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(6, 182, 212, 0.9);
+            color: white;
+            padding: 1.2rem 1.8rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transform: translateX(150%);
+            transition: transform 0.4s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        /* Efek partikel */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: particle-float 15s infinite linear;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+            }
+            100% {
+                transform: translateY(-100px) translateX(20px);
+            }
+        }
+        
+        /* Equalizer visual */
+        .equalizer {
+            display: flex;
+            align-items: end;
+            gap: 3px;
+            height: 20px;
+        }
+        
+        .bar {
+            width: 3px;
+            background: #3b82f6;
+            border-radius: 2px;
+            animation: equalizer 1.5s ease infinite;
+        }
+        
+        .bar:nth-child(1) { animation-delay: 0s; height: 8px; }
+        .bar:nth-child(2) { animation-delay: 0.1s; height: 12px; }
+        .bar:nth-child(3) { animation-delay: 0.2s; height: 16px; }
+        .bar:nth-child(4) { animation-delay: 0.3s; height: 12px; }
+        .bar:nth-child(5) { animation-delay: 0.4s; height: 8px; }
+        
+        @keyframes equalizer {
+            0%, 100% { height: 8px; }
+            50% { height: 16px; }
+        }
+        
+        .equalizer.playing .bar {
+            animation-play-state: running;
+        }
+        
+        .equalizer.paused .bar {
+            animation-play-state: paused;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background animasi -->
+    <div class="bg-animation">
+        <div class="bg-circle circle-1"></div>
+        <div class="bg-circle circle-2"></div>
+        <div class="bg-circle circle-3"></div>
+    </div>
+    
+    <!-- Partikel -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Header -->
+    <div class="header">
+        <h1>Payment Gateway</h1>
+        <p>Pilih metode pembayaran yang tersedia di bawah ini. Semua transaksi aman dan terjamin dengan enkripsi tingkat tinggi.</p>
+    </div>
+    
+    <!-- Container utama -->
+    <div class="container">
+        <!-- Kartu DANA -->
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-title">
+                    <div class="payment-logo">
+                        <img src="https://files.catbox.moe/wdergg.jpeg" alt="DANA Logo">
+                    </div>
+                    <div class="payment-name">DANA</div>
+                </div>
+                <div class="payment-status">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Aktif</span>
+                </div>
+            </div>
+            
+            <div class="payment-info">
+                <h3><i class="fas fa-phone-alt"></i> Nomor DANA</h3>
+                <div class="payment-number" id="dana-number">08983640582</div>
+                <button class="copy-btn" onclick="copyToClipboard('dana-number', 'DANA')">
+                    <i class="fas fa-copy"></i> Salin Nomor
+                </button>
+            </div>
+            
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> Cara Pembayaran:</h4>
+                <ol>
+                    <li>Buka aplikasi DANA di smartphone Anda</li>
+                    <li>Pilih menu "Kirim" atau "Transfer"</li>
+                    <li>Masukkan nomor DANA di atas</li>
+                    <li>Masukkan nominal pembayaran</li>
+                    <li>Konfirmasi dan selesaikan transaksi</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Kartu OVO -->
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-title">
+                    <div class="payment-logo">
+                        <img src="https://files.catbox.moe/qe8bqy.png" alt="OVO Logo">
+                    </div>
+                    <div class="payment-name">OVO</div>
+                </div>
+                <div class="payment-status">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Aktif</span>
+                </div>
+            </div>
+            
+            <div class="payment-info">
+                <h3><i class="fas fa-phone-alt"></i> Nomor OVO</h3>
+                <div class="payment-number" id="ovo-number">08983640582</div>
+                <button class="copy-btn" onclick="copyToClipboard('ovo-number', 'OVO')">
+                    <i class="fas fa-copy"></i> Salin Nomor
+                </button>
+            </div>
+            
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> Cara Pembayaran:</h4>
+                <ol>
+                    <li>Buka aplikasi OVO di smartphone Anda</li>
+                    <li>Pilih menu "Transfer"</li>
+                    <li>Masukkan nomor OVO di atas</li>
+                    <li>Masukkan nominal pembayaran</li>
+                    <li>Konfirmasi dan selesaikan transaksi</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Kartu GoPay -->
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-title">
+                    <div class="payment-logo">
+                        <img src="https://files.catbox.moe/g2i070.jpeg" alt="GoPay Logo">
+                    </div>
+                    <div class="payment-name">GoPay</div>
+                </div>
+                <div class="payment-status">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Aktif</span>
+                </div>
+            </div>
+            
+            <div class="payment-info">
+                <h3><i class="fas fa-phone-alt"></i> Nomor GoPay</h3>
+                <div class="payment-number" id="gopay-number">08983640582</div>
+                <button class="copy-btn" onclick="copyToClipboard('gopay-number', 'GoPay')">
+                    <i class="fas fa-copy"></i> Salin Nomor
+                </button>
+            </div>
+            
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> Cara Pembayaran:</h4>
+                <ol>
+                    <li>Buka aplikasi Gojek di smartphone Anda</li>
+                    <li>Pilih menu "Bayar" atau "GoPay"</li>
+                    <li>Pilih "Transfer"</li>
+                    <li>Masukkan nomor GoPay di atas</li>
+                    <li>Masukkan nominal pembayaran dan selesaikan</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Kartu QRIS -->
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-title">
+                    <div class="payment-logo">
+                        <img src="https://files.catbox.moe/xg20bf.png" alt="QRIS Logo">
+                    </div>
+                    <div class="payment-name">QRIS</div>
+                </div>
+                <div class="payment-status">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Aktif</span>
+                </div>
+            </div>
+            
+            <div class="payment-info">
+                <h3><i class="fas fa-camera"></i> Scan QR Code</h3>
+                <div class="qr-container">
+                    <div class="qr-code">
+                        <img src="https://files.catbox.moe/44p2m4.jpg" alt="QR Code">
+                    </div>
+                    <div class="qr-label">Scan kode QR di atas untuk pembayaran</div>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> Cara Pembayaran:</h4>
+                <ol>
+                    <li>Buka aplikasi e-wallet atau mobile banking yang mendukung QRIS</li>
+                    <li>Pilih menu "Scan QR" atau "Bayar dengan QR"</li>
+                    <li>Arahkan kamera ke kode QR di atas</li>
+                    <li>Masukkan nominal pembayaran (jika diperlukan)</li>
+                    <li>Konfirmasi dan selesaikan transaksi</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p>© 2023 Payment Gateway | Semua transaksi aman dan terjamin | Support: support@paymentgateway.id</p>
+    </div>
+    
+    <!-- Player Musik -->
+    <div class="music-player">
+        <button class="music-control" id="playPauseBtn">
+            <i class="fas fa-play"></i>
+        </button>
+        <div class="music-info">
+            <div class="music-title">Lofi Background Music</div>
+            <div class="music-status" id="musicStatus">Paused</div>
+        </div>
+        <div class="equalizer paused" id="equalizer">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <div class="volume-control">
+            <i class="fas fa-volume-up"></i>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
+        </div>
+    </div>
+    
+    <!-- Audio Element -->
+    <audio id="backgroundMusic" loop>
+        <source src="https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav" type="audio/wav">
+        Browser Anda tidak mendukung elemen audio.
+    </audio>
+    
+    <!-- Notifikasi -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">Nomor berhasil disalin!</span>
+    </div>
+
+    <script>
+        // Elemen musik
+        const audio = document.getElementById('backgroundMusic');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const musicStatus = document.getElementById('musicStatus');
+        const equalizer = document.getElementById('equalizer');
+        
+        // Set volume awal
+        audio.volume = volumeSlider.value / 100;
+        
+        // Fungsi untuk menyalin teks ke clipboard
+        function copyToClipboard(elementId, provider) {
+            const element = document.getElementById(elementId);
+            const text = element.innerText;
+            
+            // Buat elemen textarea sementara
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            
+            // Pilih dan salin teks
+            textarea.select();
+            document.execCommand('copy');
+            
+            // Hapus elemen textarea
+            document.body.removeChild(textarea);
+            
+            // Tampilkan notifikasi
+            showNotification(`Nomor ${provider} berhasil disalin!`);
+            
+            // Beri feedback kepada pengguna
+            const originalText = event.target.innerHTML;
+            event.target.innerHTML = '<i class="fas fa-check"></i> Tersalin!';
+            event.target.style.background = 'linear-gradient(to right, #10b981, #059669)';
+            
+            setTimeout(() => {
+                event.target.innerHTML = originalText;
+                event.target.style.background = 'linear-gradient(to right, #1e40af, #1e3a8a)';
+            }, 2000);
+        }
+        
+        // Fungsi untuk menampilkan notifikasi
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Fungsi untuk membuat partikel
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Posisi acak
+                const left = Math.random() * 100;
+                const animationDelay = Math.random() * 15;
+                const size = Math.random() * 3 + 2;
+                
+                particle.style.left = `${left}%`;
+                particle.style.animationDelay = `${animationDelay}s`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Kontrol musik
+        playPauseBtn.addEventListener('click', function() {
+            if (audio.paused) {
+                audio.play();
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                musicStatus.textContent = 'Playing';
+                equalizer.classList.remove('paused');
+                equalizer.classList.add('playing');
+            } else {
+                audio.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                musicStatus.textContent = 'Paused';
+                equalizer.classList.remove('playing');
+                equalizer.classList.add('paused');
+            }
+        });
+        
+        volumeSlider.addEventListener('input', function() {
+            audio.volume = this.value / 100;
+        });
+        
+        // Animasi smooth saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            // Buat partikel
+            createParticles();
+            
+            const cards = document.querySelectorAll('.payment-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+            
+            // Preload gambar untuk menghindari efek loading
+            const imageUrls = [
+                'https://files.catbox.moe/wdergg.jpeg',
+                'https://files.catbox.moe/qe8bqy.png',
+                'https://files.catbox.moe/g2i070.jpeg',
+                'https://files.catbox.moe/xg20bf.png',
+                'https://files.catbox.moe/44p2m4.jpg'
+            ];
+            
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+            
+            // Auto play musik setelah interaksi pengguna
+            document.body.addEventListener('click', function initAudio() {
+                // Hanya jalankan sekali
+                document.body.removeEventListener('click', initAudio);
+                
+                // Ganti dengan URL musik yang sebenarnya
+                audio.src = 'https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav';
+                
+                // Coba putar musik
+                audio.play().then(() => {
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    musicStatus.textContent = 'Playing';
+                    equalizer.classList.remove('paused');
+                    equalizer.classList.add('playing');
+                }).catch(error => {
+                    console.log('Auto-play prevented:', error);
+                    musicStatus.textContent = 'Click play to start music';
+                });
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>                    
